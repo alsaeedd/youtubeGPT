@@ -80,3 +80,7 @@ api_key = os.environ['ANTHROPIC_API_KEY']
 ```
 
 Now your the project environment is all set up and ready to go.
+
+#### 5. Install Extensions for a Smooth Experience
+
+In VSCode, install the Jupyter and Python extensions. This way, you will see a "Run Cell" button on top of each of the prompts and pieces of code you want to mess around with.
