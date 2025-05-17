@@ -1,42 +1,40 @@
 #%%
 # Setup and Imports
-from langchain.document_loaders import YoutubeLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import FAISS
+from langchain_community.document_loaders import YoutubeLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_huggingface import HuggingFaceEmbeddings  # Updated import
+from langchain_community.vectorstores import FAISS
 from langchain_anthropic import ChatAnthropic
-from langchain.chains import LLMChain
+from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
+from langchain_core.output_parsers import StrOutputParser  # Added for modern chain construction
 from dotenv import find_dotenv, load_dotenv
-from langchain.prompts.chat import (
-    ChatPromptTemplate,
-    SystemMessagePromptTemplate,
-    HumanMessagePromptTemplate,
-)
 import textwrap
 import os
 
 load_dotenv(find_dotenv())
-embeddings = HuggingFaceEmbeddings()
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")  # Explicit model name
 
 def create_db_from_youtube_video_url(video_url):
     loader = YoutubeLoader.from_youtube_url(video_url)
     transcript = loader.load()
 
     # Split the transcript into chunks so that we don't exceed the maximum token limit
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=100)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=4000, chunk_overlap=100)
     docs = text_splitter.split_documents(transcript)
 
     db = FAISS.from_documents(docs, embeddings)
     return db
 
-def get_response_from_query(db, query, k=4): # 4 because of Claude-3's max token limit
+def get_response_from_query(db, query, k=4):
     docs = db.similarity_search(query, k=k)
     docs_page_content = " ".join([d.page_content for d in docs])
 
+    # Modern ChatAnthropic initialization with extended thinking
     chat = ChatAnthropic(
         anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
-        model="claude-3-7-sonnet-20250219",
-        temperature=0.2,
+        model="claude-3-7-sonnet-latest",
+        max_tokens=4000,
+        temperature=1,
         thinking={"type": "enabled", "budget_tokens": 2000},
     )
 
@@ -53,14 +51,15 @@ def get_response_from_query(db, query, k=4): # 4 because of Claude-3's max token
     human_template = "Answer the following question: {question}"
     human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
 
+    # Modern chain construction using pipe syntax
     chat_prompt = ChatPromptTemplate.from_messages(
         [system_message_prompt, human_message_prompt]
     )
-
-    chain = LLMChain(llm=chat, prompt=chat_prompt)
     
-    # Changed to handle Anthropic's response format
-    response = chain.run(question=query, docs=docs_page_content)
+    chain = chat_prompt | chat | StrOutputParser()
+    
+    # Modern invoke method instead of run
+    response = chain.invoke({"question": query, "docs": docs_page_content})
     response = response.replace("\n", "")
     return response, docs
 
