@@ -35,15 +35,16 @@ def get_response_from_query(db, query, k=4): # 4 because of Claude-3's max token
 
     chat = ChatAnthropic(
         anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
-        model="claude-3-sonnet-20240229",
-        temperature=0.2
+        model="claude-3-7-sonnet-20250219",
+        temperature=0.2,
+        thinking={"type": "enabled", "budget_tokens": 2000},
     )
 
     template = """
         You are a helpful assistant that that can answer questions about youtube videos 
         based on the video's transcript: {docs}
         
-        Only use the factual information from the transcript to answer the question.
+        Only use the factual information from the transcript to answer the question, but you are obviously allowed to follow instructions you are given.
         
         If you feel like you don't have enough information to answer the question, say "I don't know".
         """
@@ -65,7 +66,7 @@ def get_response_from_query(db, query, k=4): # 4 because of Claude-3's max token
 
 #%%
 # YouTubeGPT:
-video_url = "https://youtu.be/Tch_RYAjtRo"
+video_url = "https://youtu.be/lmCaQxk4b8c?si=8Q1e-hpx80sgtcbe"
 db = create_db_from_youtube_video_url(video_url)
 
 query = "What is this video about?"
