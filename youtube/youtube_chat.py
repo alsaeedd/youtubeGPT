@@ -25,7 +25,7 @@ def create_db_from_youtube_video_url(video_url):
     db = FAISS.from_documents(docs, embeddings)
     return db
 
-def get_response_from_query(db, query, k=4):
+def get_response_from_query(db, query, k=8):
     docs = db.similarity_search(query, k=k)
     docs_page_content = " ".join([d.page_content for d in docs])
 
@@ -33,7 +33,7 @@ def get_response_from_query(db, query, k=4):
     chat = ChatAnthropic(
         anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
         model="claude-3-7-sonnet-latest",
-        max_tokens=4000,
+        max_tokens=8000,
         temperature=1,
         thinking={"type": "enabled", "budget_tokens": 2000},
     )
@@ -68,7 +68,7 @@ def get_response_from_query(db, query, k=4):
 video_url = "https://youtu.be/lmCaQxk4b8c?si=8Q1e-hpx80sgtcbe"
 db = create_db_from_youtube_video_url(video_url)
 
-query = "What is this video about?"
+query = "What are the 5 habits mentioned in this video?"
 response, docs = get_response_from_query(db, query)
 print("\n")
 print(textwrap.fill(response, width=50))
