@@ -53,7 +53,7 @@ pip install -r requirements.txt
 
 #### 4. Set up the keys in a .env file
 
-First, create a `.env` file in the root directory of the project. Inside the file, add your OpenAI API key:
+First, create a `.env` file in the root directory of the project. Inside the file, add your API key:
 
 ```makefile
 ANTHROPIC_API_KEY="your_api_key_here"
